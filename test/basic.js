@@ -32,7 +32,7 @@ test('insertions', function (t) {
 })
 
 test('get full string', function (t) {
-  t.plan(5)
+  t.plan(9)
   
   var str = hstring(memdb())
 
@@ -44,8 +44,12 @@ test('get full string', function (t) {
         t.notOk(err)
         str.insert(op2.pos, 'j', function (err, op4) {
           t.notOk(err)
-          str.createStringStream().pipe(concat(function (string) {
-            t.equal(string.toString(), 'Hejy')
+          str.createStringStream().pipe(concat(function (elems) {
+            t.equal(elems.length, 4)
+            t.equal(elems[0].chr, 'H')
+            t.equal(elems[1].chr, 'e')
+            t.equal(elems[2].chr, 'j')
+            t.equal(elems[3].chr, 'y')
           }))
         })
       })

@@ -80,8 +80,7 @@ HyperString.prototype.delete = function (at, cb) {
 }
 
 HyperString.prototype.createStringStream = function () {
-  // TODO: probably more efficient ways to accumulate a string..
-  var string = through()
+  var string = through.obj()
 
   var self = this
   this.index.ready(function () {
@@ -93,7 +92,11 @@ HyperString.prototype.createStringStream = function () {
     while (queue.length > 0) {
       var key = queue.pop()
       var dagnode = self.stringDag[key]
-      string.write(dagnode.chr)
+      var elem = {
+        chr: dagnode.chr,
+        pos: key
+      }
+      string.write(elem)
       queue = queue.concat(dagnode.links)
     }
 
