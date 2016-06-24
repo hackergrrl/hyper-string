@@ -25,7 +25,7 @@ HyperString.prototype.insert = function (prev, chr, cb) {
       op: op.op,
       chr: op.chr,
       prev: op.prev,
-      key: node.key
+      pos: node.key
     }
     if (cb) cb(null, res)
   })
