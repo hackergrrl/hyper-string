@@ -21,18 +21,24 @@ HyperString.prototype.insert = function (prev, chr, cb) {
     prev: prev || null
   }
   this.log.append(op, function (err, node) {
-    var res = {
-      op: op.op,
-      chr: op.chr,
-      prev: op.prev,
-      pos: node.key
-    }
-    if (cb) cb(null, res)
+    if (!cb) return
+    if (err) return cb(err)
+    op.pos = node.key
+    cb(null, op)
   })
 }
 
 HyperString.prototype.delete = function (at, cb) {
-  process.nextTick(function () { cb(null) })
+  // TODO: support ranges
+  var op = {
+    op: 'del',
+    at: at || null
+  }
+  this.log.append(op, function (err, node) {
+    if (!cb) return
+    if (err) return cb(err)
+    cb(null, op)
+  })
 }
 
 // HyperString.prototype.createStringStream = function () {
