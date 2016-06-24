@@ -1,6 +1,6 @@
 {
   "name": "hyper-string",
-  "description": "string data structure powered by a hyperlog of operations",
+  "description": "conflict-free p2p string data structure powered by a hyperlog of operations",
   "version": "0.0.0",
   "author": "Stephen Whitmore <stephen.whitmore@gmail.com>",
   "repository": {
