@@ -1,6 +1,6 @@
 # hyper-string
 
-> string data structure powered by a hyperlog of operations
+> conflict-free p2p string data structure powered by a hyperlog of operations
 
 **STATUS**: very mad science-y work-in-progres
 
