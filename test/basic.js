@@ -2,6 +2,7 @@ var test = require('tape')
 var hstring = require('../')
 var memdb = require('memdb')
 var concat = require('concat-stream')
+var through = require('through2')
 
 test('insertions', function (t) {
   t.plan(12)
@@ -32,27 +33,25 @@ test('insertions', function (t) {
 })
 
 test('get full string', function (t) {
-  t.plan(9)
-  
+  t.plan(6)
   var str = hstring(memdb())
 
   str.insert(null, 'H', function (err, op) {
-    t.notOk(err)
     str.insert(op.pos, 'e', function (err, op2) {
-      t.notOk(err)
-      str.insert(op2.pos, 'y', function (err, op3) {
-        t.notOk(err)
-        str.insert(op2.pos, 'j', function (err, op4) {
-          t.notOk(err)
-          str.createStringStream().pipe(concat(function (elems) {
-            t.equal(elems.length, 4)
-            t.equal(elems[0].chr, 'H')
-            t.equal(elems[1].chr, 'e')
-            t.equal(elems[2].chr, 'j')
-            t.equal(elems[3].chr, 'y')
-          }))
+      str.insert(op2.pos, 'l', function (err, op3) {
+        str.insert(op3.pos, 'l', function (err, op4) {
+          str.insert(op4.pos, 'o')
+          str.insert(op2.pos, 'y')  // two inserts at 'op2.pos'!
         })
       })
     })
   })
+
+  var expected = ['H', 'e', 'y', 'l', 'l', 'o']
+
+  str.createStringStream()
+    .pipe(through.obj(function (elem, enc, next) {
+      t.equal(elem.chr, expected.shift())
+      next()
+    }))
 })
