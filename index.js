@@ -1,6 +1,7 @@
 var hyperlog = require('hyperlog')
 var hindex = require('hyperlog-index')
 var memdb = require('memdb')
+var through = require('through2')
 
 module.exports = HyperString
 
@@ -14,7 +15,9 @@ function HyperString (db, opts) {
 
   // Representation of the string's current state, as a DAG.
   // This makes traversal from the beginning of the document quick!
-  var stringDag = {}
+  this.stringDag = {}
+  this.stringRoots = []
+  var self = this
   this.index = hindex({
     log: this.log,
     db: memdb(),  // for now, separate in-memory
@@ -25,23 +28,24 @@ function HyperString (db, opts) {
           chr: row.value.chr,
           links: []
         }
-        stringDag[row.key] = character
+        self.stringDag[row.key] = character
 
         // add links
         if (row.value.prev) {
-          var prev = stringDag[row.value.prev]
+          var prev = self.stringDag[row.value.prev]
           if (!prev) throw new Error('woah, this should never happen!')
           prev.links.push(row.key)
+        }
+
+        // set as a root if no hyperlog links
+        if (row.links.length === 0) {
+          self.stringRoots.push(row.key)
         }
       } else {
         throw new Error('unsupported operation: ' + row.value.op)
       }
       next()
     }
-  })
-
-  this.index.ready(function () {
-//    console.log('READY', stringDag)
   })
 }
 
@@ -75,8 +79,29 @@ HyperString.prototype.delete = function (at, cb) {
   })
 }
 
-// HyperString.prototype.createStringStream = function () {
-// }
+HyperString.prototype.createStringStream = function () {
+  // TODO: probably more efficient ways to accumulate a string..
+  var string = through()
+
+  var self = this
+  this.index.ready(function () {
+    var queue = []
+    for (var i=0; i < self.stringRoots.length; i++) {
+      queue.push(self.stringRoots[i])
+    }
+
+    while (queue.length > 0) {
+      var key = queue.pop()
+      var dagnode = self.stringDag[key]
+      string.write(dagnode.chr)
+      queue = queue.concat(dagnode.links)
+    }
+
+    string.end()
+  })
+
+  return string
+}
 
 HyperString.prototype.createReadStream = function (opts) {
   return this.log.createReadStream(opts)

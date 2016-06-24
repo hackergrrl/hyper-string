@@ -30,3 +30,25 @@ test('insertions', function (t) {
     })
   })
 })
+
+test('get full string', function (t) {
+  t.plan(5)
+  
+  var str = hstring(memdb())
+
+  str.insert(null, 'H', function (err, op) {
+    t.notOk(err)
+    str.insert(op.pos, 'e', function (err, op2) {
+      t.notOk(err)
+      str.insert(op2.pos, 'y', function (err, op3) {
+        t.notOk(err)
+        str.insert(op2.pos, 'j', function (err, op4) {
+          t.notOk(err)
+          str.createStringStream().pipe(concat(function (string) {
+            t.equal(string.toString(), 'Hejy')
+          }))
+        })
+      })
+    })
+  })
+})
