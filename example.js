@@ -1,14 +1,16 @@
 var hstring = require('./index')
+var memdb = require('memdb')
 
-var str = hstring()
+var str = hstring(memdb())
 
-str.insert(null, 'H', function (err, at) {
-    str.insert(at, 'e', function (err, at2) {
-	str.insert(at2, 'y', function (err, at3) {
-	    str.insert(at, 'i', function (err, at4) {
-		// str.createStringStream().pipe(process.stdout)
-		// str.createReadStream()
-	    })
-	})
+str.insert(null, 'H', function (err, op) {
+  console.log('insert', op)
+  str.insert(op.key, 'e', function (err, op2) {
+    str.insert(op2.key, 'y', function (err, op3) {
+      str.insert(op.key, 'i', function (err, op4) {
+        // str.createStringStream().pipe(process.stdout)
+        // str.createReadStream()
+      })
     })
+  })
 })
