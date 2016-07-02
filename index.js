@@ -38,7 +38,7 @@ function HyperString (db, opts) {
         }
 
         // set as a root if no hyperlog links
-        if (row.links.length === 0) {
+        if (!row.value.prev) {
           self.stringRoots.push(row.key)
         }
       } else {
