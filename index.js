@@ -42,7 +42,8 @@ function HyperString (db, opts) {
           self.stringRoots.push(row.key)
         }
       } else {
-        throw new Error('unsupported operation: ' + row.value.op)
+        self.stringDag[row.value.at].deleted = true
+        // throw new Error('unsupported operation: ' + row.value.op)
       }
       next()
     }
@@ -69,7 +70,7 @@ HyperString.prototype.insert = function (prev, chr, cb) {
 HyperString.prototype.delete = function (at, cb) {
   // TODO: support ranges
   var op = {
-    op: 'del',
+    op: 'delete',
     at: at || null
   }
   this.log.append(op, function (err, node) {
@@ -79,8 +80,8 @@ HyperString.prototype.delete = function (at, cb) {
   })
 }
 
-HyperString.prototype.createStringStream = function () {
-  var string = through.obj()
+HyperString.prototype.chars = function (cb) {
+  var string = []
 
   var self = this
   this.index.ready(function () {
@@ -92,18 +93,24 @@ HyperString.prototype.createStringStream = function () {
     while (queue.length > 0) {
       var key = queue.pop()
       var dagnode = self.stringDag[key]
-      var elem = {
-        chr: dagnode.chr,
-        pos: key
+      if (!dagnode.deleted) {
+        var elem = {
+          chr: dagnode.chr,
+          pos: key
+        }
+        string.push(elem)
       }
-      string.write(elem)
       queue = queue.concat(dagnode.links)
     }
 
-    string.end()
+    if (cb) cb(null, string)
   })
+}
 
-  return string
+HyperString.prototype.text = function (cb) {
+  this.chars(function (err, text) {
+    cb(null, text.map(function (c) { return c.chr }).join(''))
+  })
 }
 
 HyperString.prototype.createReadStream = function (opts) {
