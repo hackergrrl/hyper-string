@@ -116,3 +116,7 @@ HyperString.prototype.text = function (cb) {
 HyperString.prototype.createReadStream = function (opts) {
   return this.log.createReadStream(opts)
 }
+
+HyperString.prototype.createReplicationStream = function (opts) {
+  return this.log.createReplicationStream(opts)
+}
