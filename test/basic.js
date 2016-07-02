@@ -32,9 +32,6 @@ test('insertions', function (t) {
   })
 })
 
-test('deletions', function (t) {
-})
-
 test('text + chars', function (t) {
   t.plan(4)
 
@@ -88,5 +85,31 @@ test('text + chars', function (t) {
     ]
     t.equals(err, null)
     t.deepEquals(chars, expected)
+  })
+})
+
+test('deletions', function (t) {
+  t.plan(3)
+
+  var str = hstring(memdb())
+
+  str.insert(null, 'H', function (err, op) {
+    str.insert(op.pos, 'e', function (err, op2) {
+      str.insert(op2.pos, 'y', function (err, op3) {
+        str.text(function (err, text) {
+          t.equals(text, 'Hey')
+          str.delete(op2.pos, function (err) {
+            str.text(function (err, text) {
+              t.equals(text, 'Hy')
+              str.delete(op.pos, function (err) {
+                str.text(function (err, text) {
+                  t.equals(text, 'y')
+                })
+              })
+            })
+          })
+        })
+      })
+    })
   })
 })
