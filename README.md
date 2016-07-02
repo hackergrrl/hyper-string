@@ -80,33 +80,34 @@ where `pos` is the unique ID representing this inserted character's location,
 `chr` is the inserted character, and `prev` is either the preceding character's
 ID, or `null` (this character is a document root).
 
-### str.createStringStream()
+### str.delete(pos, cb)
 
-Returns a Readable object stream of characters, in the order they would be
+Deletes the character at position `pos`. `cb` is called with the signature
+`function (err, op)`, where `op` is a DELETE operation object of the form
+
+```js
+{
+  op: 'delete',
+  pos: ...
+}
+```
+
+### str.text(cb)
+
+Asynchronously returns a string, in the order they would be displayed for a
+human to read.
+
+### str.chars(cb)
+
+Asynchronously returns all characters in the string, in the order they would be
 displayed for a human to read. Each object is of the form
 
 ```js
 {
-  chr: 'H',
+  chr: 'P',
   pos: '...'
 }
 ```
-
-Printing the full contents of the string to standard out can be done with a
-simple `through2` stream:
-
-```js
-str.createStringStream()
-  .pipe(through2.obj(function (elem, enc, next) {
-    process.stdin.write(elem.chr)
-    next()
-  }))
-```
-
-### str.createReadStream()
-
-**TODO**: exposes the raw hyperlog read stream right now, but it ought to just
-pump out operation objects instead of exposing hyperlog innards
 
 
 ## Install
