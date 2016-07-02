@@ -6,7 +6,7 @@ var through = require('through2')
 
 test('insertions', function (t) {
   t.plan(12)
-  
+
   var str = hstring(memdb())
 
   str.insert(null, 'H', function (err, op) {
@@ -33,7 +33,7 @@ test('insertions', function (t) {
 })
 
 test('get full string', function (t) {
-  t.plan(6)
+  t.plan(2)
   var str = hstring(memdb())
 
   str.insert(null, 'H', function (err, op) {
@@ -47,11 +47,10 @@ test('get full string', function (t) {
     })
   })
 
-  var expected = ['H', 'e', 'y', 'l', 'l', 'o']
+  var expected = 'Heyllo'
 
-  str.createStringStream()
-    .pipe(through.obj(function (elem, enc, next) {
-      t.equal(elem.chr, expected.shift())
-      next()
-    }))
+  str.text(function (err, text) {
+    t.equals(err, null)
+    t.equals(text, expected)
+  })
 })
