@@ -41,9 +41,15 @@ function HyperString (db, opts) {
         if (!row.value.prev) {
           self.stringRoots.push(row.key)
         }
+      } else if (row.value.op === 'delete') {
+        var entry = self.stringDag[row.value.at]
+        if (entry) {
+          entry.deleted = true
+        } else {
+          throw new Error('tried to delete non-existent ID: ' + row.value.at)
+        }
       } else {
-        self.stringDag[row.value.at].deleted = true
-        // throw new Error('unsupported operation: ' + row.value.op)
+        throw new Error('unsupported operation:', row.value.op)
       }
       next()
     }
