@@ -39,7 +39,7 @@ function HyperString (db, opts) {
 
         // set as a root if no hyperlog links
         if (!row.value.prev) {
-          self.stringRoots.push(row.key)
+          self.stringRoots.unshift(row.key)
         }
       } else if (row.value.op === 'delete') {
         var entry = self.stringDag[row.value.at]
@@ -97,7 +97,7 @@ HyperString.prototype.chars = function (cb) {
     }
 
     while (queue.length > 0) {
-      var key = queue.pop()
+      var key = queue.shift()
       var dagnode = self.stringDag[key]
       if (!dagnode.deleted) {
         var elem = {
@@ -106,7 +106,7 @@ HyperString.prototype.chars = function (cb) {
         }
         string.push(elem)
       }
-      queue = queue.concat(dagnode.links)
+      queue = dagnode.links.concat(queue)
     }
 
     if (cb) cb(null, string)
