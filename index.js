@@ -34,7 +34,7 @@ function HyperString (db, opts) {
         if (row.value.prev) {
           var prev = self.stringDag[row.value.prev]
           if (!prev) throw new Error('woah, this should never happen!')
-          prev.links.push(row.key)
+          prev.links.unshift(row.key)
         }
 
         // set as a root if no hyperlog links
