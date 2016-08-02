@@ -113,3 +113,18 @@ test('deletions', function (t) {
     })
   })
 })
+
+test('insert with same prev twice', function (t) {
+  t.plan(1)
+  var str = hstring(memdb())
+
+  str.insert(null, 'H', function (err, op1) {
+    str.insert(op1.pos, 'y', function (err, op2) {
+      str.insert(op1.pos, 'e', function (err, op3) {
+        str.text(function (err, text) {
+          t.equal(text, 'Hey')
+        })
+      })
+    })
+  })
+})
