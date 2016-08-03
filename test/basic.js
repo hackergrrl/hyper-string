@@ -9,15 +9,15 @@ test('insertions', function (t) {
 
   var str = hstring(memdb())
 
-  str.insert(null, 'H', function (err, op) {
+  str.insert(null, 'H', function (err, ops) {
     t.notOk(err)
-    t.equal(op.chr, 'H')
-    str.insert(op.pos, 'e', function (err, op2) {
+    t.equal(ops[0].chr, 'H')
+    str.insert(ops[0].pos, 'e', function (err, ops2) {
       t.notOk(err)
-      t.equal(op2.chr, 'e')
-      str.insert(op2.pos, 'y', function (err, op3) {
+      t.equal(ops2[0].chr, 'e')
+      str.insert(ops2[0].pos, 'y', function (err, ops3) {
         t.notOk(err)
-        t.equal(op3.chr, 'y')
+        t.equal(ops3[0].chr, 'y')
 
         str.createReadStream().pipe(concat(function (ops) {
           t.equal(ops.length, 3)
@@ -37,12 +37,12 @@ test('text + chars', function (t) {
 
   var str = hstring(memdb())
 
-  str.insert(null, 'H', function (err, op) {
-    str.insert(op.pos, 'e', function (err, op2) {
-      str.insert(op2.pos, 'l', function (err, op3) {
-        str.insert(op3.pos, 'l', function (err, op4) {
-          str.insert(op4.pos, 'o')
-          str.insert(op2.pos, 'y')  // two inserts at 'op2.pos'!
+  str.insert(null, 'H', function (err, ops) {
+    str.insert(ops[0].pos, 'e', function (err, ops2) {
+      str.insert(ops2[0].pos, 'l', function (err, ops3) {
+        str.insert(ops3[0].pos, 'l', function (err, ops4) {
+          str.insert(ops4[0].pos, 'o')
+          str.insert(ops2[0].pos, 'y')  // two inserts at 'op2[0].pos'!
         })
       })
     })
@@ -93,15 +93,15 @@ test('deletions', function (t) {
 
   var str = hstring(memdb())
 
-  str.insert(null, 'H', function (err, op) {
-    str.insert(op.pos, 'e', function (err, op2) {
-      str.insert(op2.pos, 'y', function (err, op3) {
+  str.insert(null, 'H', function (err, ops) {
+    str.insert(ops[0].pos, 'e', function (err, ops2) {
+      str.insert(ops2[0].pos, 'y', function (err, ops3) {
         str.text(function (err, text) {
           t.equals(text, 'Hey')
-          str.delete(op2.pos, function (err) {
+          str.delete(ops2[0].pos, function (err) {
             str.text(function (err, text) {
               t.equals(text, 'Hy')
-              str.delete(op.pos, function (err) {
+              str.delete(ops[0].pos, function (err) {
                 str.text(function (err, text) {
                   t.equals(text, 'y')
                 })
@@ -118,13 +118,41 @@ test('insert with same prev twice', function (t) {
   t.plan(1)
   var str = hstring(memdb())
 
-  str.insert(null, 'H', function (err, op1) {
-    str.insert(op1.pos, 'y', function (err, op2) {
-      str.insert(op1.pos, 'e', function (err, op3) {
+  str.insert(null, 'H', function (err, ops1) {
+    str.insert(ops1[0].pos, 'y', function (err, ops2) {
+      str.insert(ops1[0].pos, 'e', function (err, ops3) {
         str.text(function (err, text) {
           t.equal(text, 'Hey')
         })
       })
     })
+  })
+})
+
+test('insert/delete multiple chars', function (t) {
+  var str = hstring(memdb())
+
+  str.insert(null, 'Hey', function (err, ops) {
+    t.equal(ops.length, 3)
+
+    t.equal(ops[0].prev, null)
+    t.equal(ops[0].chr, 'H')
+    t.equal(ops[1].prev, ops[0].pos)
+    t.equal(ops[1].chr, 'e')
+    t.equal(ops[2].prev, ops[1].pos)
+    t.equal(ops[2].chr, 'y')
+
+    str.delete(ops[0].pos, 2, function (err, ops2) {
+      t.equal(ops2.length, 2)
+
+      t.equal(ops2[0].at, ops[0].pos)
+      t.equal(ops2[1].at, ops[1].pos)
+
+      str.text(function (err, text) {
+        t.equal(text, 'y')
+        t.end()
+      })
+    })
+
   })
 })
