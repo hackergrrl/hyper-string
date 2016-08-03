@@ -16,7 +16,6 @@ fix the spelling error by inserting another "l".
 ```js
 var hstring = require('hyper-string')
 var memdb = require('memdb')
-var through = require('through2')
 
 var str = hstring(memdb())
 
@@ -25,11 +24,9 @@ str.insert(null, 'Helo', function (err, ops) {
   str.insert(ops[2].pos, 'l')
 })
 
-str.createReadStream()
-  .pipe(through.obj(function (elem, enc, next) {
-    process.stdin.write(elem.chr)
-    next()
-  }))
+str.text(function (err, text) {
+  console.log(text)
+})
 ```
 
 This will output
