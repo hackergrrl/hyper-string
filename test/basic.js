@@ -1,8 +1,9 @@
+/* eslint-disable handle-callback-err */
+
 var test = require('tape')
 var hstring = require('../')
 var memdb = require('memdb')
 var concat = require('concat-stream')
-var through = require('through2')
 
 test('insertions', function (t) {
   t.plan(12)
@@ -153,6 +154,5 @@ test('insert/delete multiple chars', function (t) {
         t.end()
       })
     })
-
   })
 })

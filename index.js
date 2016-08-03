@@ -1,7 +1,6 @@
 var hyperlog = require('hyperlog')
 var hindex = require('hyperlog-index')
 var memdb = require('memdb')
-var through = require('through2')
 
 function noop () {}
 
@@ -103,7 +102,7 @@ HyperString.prototype.delete = function (at, count, done) {
   var results = []
 
   self.chars(function (err, chars) {
-    if (err) return cb(err)
+    if (err) return done(err)
 
     var deleting = false
     for (var i = 0; i < chars.length; i++) {
@@ -147,7 +146,7 @@ HyperString.prototype.chars = function (cb) {
   var self = this
   this.index.ready(function () {
     var queue = []
-    for (var i=0; i < self.stringRoots.length; i++) {
+    for (var i = 0; i < self.stringRoots.length; i++) {
       queue.push(self.stringRoots[i])
     }
 
@@ -170,6 +169,7 @@ HyperString.prototype.chars = function (cb) {
 
 HyperString.prototype.text = function (cb) {
   this.chars(function (err, text) {
+    if (err) return cb(err)
     cb(null, text.map(function (c) { return c.chr }).join(''))
   })
 }
