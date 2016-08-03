@@ -71,9 +71,9 @@ where `pos` is the unique ID representing this inserted character's location,
 `chr` is the inserted character, and `prev` is either the preceding character's
 ID, or `null` (this character is a document root).
 
-### str.delete(pos, [count], [cb])
+### str.delete(pos, count, [cb])
 
-Deletes `count` (default 1) characters, starting at position `pos`. `cb` is called with the signature
+Deletes `count` characters, starting at position `pos`. `cb` is called with the signature
 `function (err, ops)`, where `ops` is an array of DELETE operation objects of the form:
 
 ```js

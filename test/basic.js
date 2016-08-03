@@ -99,10 +99,10 @@ test('deletions', function (t) {
       str.insert(ops2[0].pos, 'y', function (err, ops3) {
         str.text(function (err, text) {
           t.equals(text, 'Hey')
-          str.delete(ops2[0].pos, function (err) {
+          str.delete(ops2[0].pos, 1, function (err) {
             str.text(function (err, text) {
               t.equals(text, 'Hy')
-              str.delete(ops[0].pos, function (err) {
+              str.delete(ops[0].pos, 1, function (err) {
                 str.text(function (err, text) {
                   t.equals(text, 'y')
                 })

@@ -89,12 +89,6 @@ HyperString.prototype.insert = function (prev, string, done) {
 }
 
 HyperString.prototype.delete = function (at, count, done) {
-  if (typeof count === 'function') {
-    done = count
-  }
-  if (typeof count !== 'number') {
-    count = 1
-  }
   done = done || noop
 
   var self = this
