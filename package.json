@@ -17,7 +17,7 @@
   },
   "devDependencies": {
     "concat-stream": "^1.5.1",
-    "standard": "~7.1.2",
+    "standard": "^7.1.2",
     "tape": "*"
   },
   "license": "ISC"

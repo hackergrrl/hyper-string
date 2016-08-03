@@ -10,8 +10,8 @@ materialized view as a DAG of character sequences.
 
 ## Usage
 
-Let's start writing "Hello", but have a fork where some other user wants to
-change it to "Hey" after seeing "He".
+Let's start writing "Helo", but have a fork where some other user wants to
+fix the spelling error by inserting another "l".
 
 ```js
 var hstring = require('hyper-string')
@@ -20,18 +20,12 @@ var through = require('through2')
 
 var str = hstring(memdb())
 
-str.insert(null, 'H', function (err, op) {
-  str.insert(op.pos, 'e', function (err, op2) {
-    str.insert(op2.pos, 'l', function (err, op3) {
-      str.insert(op3.pos, 'l', function (err, op4) {
-        str.insert(op4.pos, 'o')
-        str.insert(op2.pos, 'y')  // two inserts at 'op2.pos'!
-      })
-    })
-  })
+str.insert(null, 'Helo', function (err, ops) {
+  // ops is an array of four insert ops
+  str.insert(ops[2].pos, 'l')
 })
 
-str.createStringStream()
+str.createReadStream()
   .pipe(through.obj(function (elem, enc, next) {
     process.stdin.write(elem.chr)
     next()
@@ -41,7 +35,7 @@ str.createStringStream()
 This will output
 
 ```
-heyllo
+Hello
 ```
 
 ## API
@@ -55,17 +49,17 @@ var hstring = require('hyper-string')
 Creates a new hyper-string, backed by the
 [LevelUP](https://github.com/Level/levelup) instance `db`.
 
-### str.insert(pos, chr, cb)
+### str.insert(pos, string, [cb])
 
-Inserts a single character `chr` after position `pos`, where `pos` is the unique
-ID of another character previously inserted. If `pos` is `null`, the character
-is inserted at the beginning of the string.
+Inserts all characters of `string` after position `pos`, where `pos` is the unique
+ID of another character previously inserted. If `pos` is `null`, the given string
+is inserted at the beginning of the hyper-string.
 
-Remember, since the string is represented by a directed acyclic graph, it
+Remember, since the hyper-string is represented by a directed acyclic graph, it
 can have many different "beginnings".
 
-The callback `cb` is called with the signature `function (err, op)`, where `op`
-is an INSERTION operation object of the form
+The callback `cb` is called with the signature `function (err, ops)`, where `ops`
+is an array of INSERTION operation objects of the form:
 
 ```js
 {
@@ -80,10 +74,10 @@ where `pos` is the unique ID representing this inserted character's location,
 `chr` is the inserted character, and `prev` is either the preceding character's
 ID, or `null` (this character is a document root).
 
-### str.delete(pos, cb)
+### str.delete(pos, [count], [cb])
 
-Deletes the character at position `pos`. `cb` is called with the signature
-`function (err, op)`, where `op` is a DELETE operation object of the form
+Deletes `count` (default 1) characters, starting at position `pos`. `cb` is called with the signature
+`function (err, ops)`, where `ops` is an array of DELETE operation objects of the form:
 
 ```js
 {
@@ -125,4 +119,3 @@ $ npm install hyper-string
 ## License
 
 ISC
-
