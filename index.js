@@ -1,3 +1,4 @@
+var assert = require('assert')
 var hyperlog = require('hyperlog')
 var hindex = require('hyperlog-index')
 var memdb = require('memdb')
@@ -59,6 +60,7 @@ function HyperString (db, opts) {
 
 HyperString.prototype.insert = function (prev, string, done) {
   done = done || noop
+
   var self = this
   var results = []
   var chars = string.split('')
@@ -90,6 +92,10 @@ HyperString.prototype.insert = function (prev, string, done) {
 
 HyperString.prototype.delete = function (at, count, done) {
   done = done || noop
+
+  assert.equal(typeof at, 'string', 'string at required')
+  assert.equal(typeof count, 'number', 'number count required')
+  assert.ok(count >= 0, 'count must be non-negative')
 
   var self = this
   var removePositions = []
