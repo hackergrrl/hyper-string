@@ -61,6 +61,7 @@ function HyperString (db, opts) {
 HyperString.prototype.insert = function (prev, string, done) {
   done = done || noop
 
+  assert.equal(typeof done, 'function', 'function done required')
   assert.equal(typeof string, 'string', 'insertion string required')
 
   var self = this
@@ -95,6 +96,7 @@ HyperString.prototype.insert = function (prev, string, done) {
 HyperString.prototype.delete = function (at, count, done) {
   done = done || noop
 
+  assert.equal(typeof done, 'function', 'function done required')
   assert.equal(typeof at, 'string', 'string at required')
   assert.equal(typeof count, 'number', 'number count required')
   assert.ok(count >= 0, 'count must be non-negative')
