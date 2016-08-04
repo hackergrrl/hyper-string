@@ -157,6 +157,15 @@ test('insert/delete multiple chars', function (t) {
   })
 })
 
+test('insert: invalid input errors', function (t) {
+  t.plan(1)
+  var str = hstring(memdb())
+
+  t.throws(function () {
+    str.insert(null, null)
+  })
+})
+
 test('delete: invalid input errors', function (t) {
   t.plan(3)
   var str = hstring(memdb())

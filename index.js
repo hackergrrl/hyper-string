@@ -61,6 +61,8 @@ function HyperString (db, opts) {
 HyperString.prototype.insert = function (prev, string, done) {
   done = done || noop
 
+  assert.equal(typeof string, 'string', 'insertion string required')
+
   var self = this
   var results = []
   var chars = string.split('')
