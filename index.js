@@ -1,7 +1,9 @@
+var assert = require('assert')
 var hyperlog = require('hyperlog')
 var hindex = require('hyperlog-index')
 var memdb = require('memdb')
-var through = require('through2')
+
+function noop () {}
 
 module.exports = HyperString
 
@@ -56,34 +58,91 @@ function HyperString (db, opts) {
   })
 }
 
-HyperString.prototype.insert = function (prev, chr, cb) {
-  // TODO: check that it's a single character
-  // TODO: support inserting a whole string, and breaking it up into
-  // one-char inserts
-  var op = {
-    op: 'insert',
-    chr: chr,
-    prev: prev || null
+HyperString.prototype.insert = function (prev, string, done) {
+  done = done || noop
+
+  assert.equal(typeof done, 'function', 'function done required')
+  assert.equal(typeof string, 'string', 'insertion string required')
+
+  var self = this
+  var results = []
+  var chars = string.split('')
+
+  insertNext()
+
+  function insertNext (error, op) {
+    if (error) return done(error, results)
+    if (op) results.push(op)
+    if (!chars.length) return done(null, results)
+
+    runInsert(chars.shift(), op ? op.pos : prev, insertNext)
   }
-  this.log.append(op, function (err, node) {
-    if (!cb) return
-    if (err) return cb(err)
-    op.pos = node.key
-    cb(null, op)
-  })
+
+  function runInsert (chr, prev, cb) {
+    var op = {
+      op: 'insert',
+      chr: chr,
+      prev: prev || null
+    }
+
+    self.log.append(op, function (err, node) {
+      if (err) return cb(err)
+      op.pos = node.key
+      cb(null, op)
+    })
+  }
 }
 
-HyperString.prototype.delete = function (at, cb) {
-  // TODO: support ranges
-  var op = {
-    op: 'delete',
-    at: at || null
-  }
-  this.log.append(op, function (err, node) {
-    if (!cb) return
-    if (err) return cb(err)
-    cb(null, op)
+HyperString.prototype.delete = function (at, count, done) {
+  done = done || noop
+
+  assert.equal(typeof done, 'function', 'function done required')
+  assert.equal(typeof at, 'string', 'string at required')
+  assert.equal(typeof count, 'number', 'number count required')
+  assert.ok(count >= 0, 'count must be non-negative')
+
+  var self = this
+  var removePositions = []
+  var results = []
+
+  self.chars(function (err, chars) {
+    if (err) return done(err)
+
+    var deleting = false
+    for (var i = 0; i < chars.length; i++) {
+      if (!count) break
+
+      if (chars[i].pos === at) {
+        deleting = true
+      }
+      if (deleting) {
+        removePositions.push(chars[i].pos)
+        count -= 1
+      }
+    }
+
+    deleteNext()
   })
+
+  function deleteNext (error, op) {
+    if (error) return done(error, results)
+    if (op) results.push(op)
+    if (!removePositions.length) return done(null, results)
+
+    runDelete(removePositions.shift(), deleteNext)
+  }
+
+  function runDelete (at, cb) {
+    // TODO: support ranges
+    var op = {
+      op: 'delete',
+      at: at || null
+    }
+    self.log.append(op, function (err, node) {
+      if (err) return cb(err)
+      cb(null, op)
+    })
+  }
 }
 
 HyperString.prototype.chars = function (cb) {
@@ -92,7 +151,7 @@ HyperString.prototype.chars = function (cb) {
   var self = this
   this.index.ready(function () {
     var queue = []
-    for (var i=0; i < self.stringRoots.length; i++) {
+    for (var i = 0; i < self.stringRoots.length; i++) {
       queue.push(self.stringRoots[i])
     }
 
@@ -115,6 +174,7 @@ HyperString.prototype.chars = function (cb) {
 
 HyperString.prototype.text = function (cb) {
   this.chars(function (err, text) {
+    if (err) return cb(err)
     cb(null, text.map(function (c) { return c.chr }).join(''))
   })
 }
