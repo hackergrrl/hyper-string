@@ -108,6 +108,8 @@ HyperString.prototype.delete = function (at, count, done) {
 
     var deleting = false
     for (var i = 0; i < chars.length; i++) {
+      if (!count) break
+
       if (chars[i].pos === at) {
         deleting = true
       }
@@ -115,7 +117,6 @@ HyperString.prototype.delete = function (at, count, done) {
         removePositions.push(chars[i].pos)
         count -= 1
       }
-      if (!count) break
     }
 
     deleteNext()
