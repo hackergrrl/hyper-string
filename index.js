@@ -25,6 +25,16 @@ function HyperString (db, opts) {
     db: memdb(),  // for now, separate in-memory
     map: function (row, next) {
       if (row.value.op === 'insert') {
+
+        // ensure 'prev' is known, if set
+        if (row.value.prev) {
+          var prev = self.stringDag[row.value.prev]
+          if (!prev) {
+            console.log('ERR: entry references unknown "prev": "' + row.value.prev + '" -- skipping')
+            return next()
+          }
+        }
+
         // add character
         var character = {
           chr: row.value.chr,
@@ -35,7 +45,7 @@ function HyperString (db, opts) {
         // add links
         if (row.value.prev) {
           var prev = self.stringDag[row.value.prev]
-          if (!prev) throw new Error('woah, this should never happen!')
+          if (!prev) throw new Error('this should NOT happen')
           prev.links.unshift(row.key)
         }
 
@@ -67,6 +77,9 @@ HyperString.prototype.insert = function (prev, string, done) {
   var self = this
   var results = []
   var chars = string.split('')
+
+  // TODO: use hyperlog#batch
+  // https://github.com/mafintosh/hyperlog#logbatchdocs-opts-cb
 
   insertNext()
 
