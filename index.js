@@ -2,6 +2,7 @@ var assert = require('assert')
 var hyperlog = require('hyperlog')
 var hindex = require('hyperlog-index')
 var memdb = require('memdb')
+var debug = require('debug')('hyper-string')
 
 function noop () {}
 
@@ -30,7 +31,7 @@ function HyperString (db, opts) {
         if (row.value.prev) {
           var prev = self.stringDag[row.value.prev]
           if (!prev) {
-            console.log('ERR: entry references unknown "prev": "' + row.value.prev + '" -- skipping')
+            debug('ERR: entry references unknown "prev": "' + row.value.prev + '" -- skipping')
             return next()
           }
         }
@@ -41,6 +42,7 @@ function HyperString (db, opts) {
           links: []
         }
         self.stringDag[row.key] = character
+        debug('stringDag['+row.key+'] = ' + character.chr)
 
         // add links
         if (row.value.prev) {
