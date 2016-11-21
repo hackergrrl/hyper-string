@@ -1,8 +1,8 @@
 var assert = require('assert')
 var hyperlog = require('hyperlog')
-var hindex = require('hyperlog-index')
 var memdb = require('memdb')
 var debug = require('debug')('hyper-string')
+var SafeIndex = require('./safe-index')
 
 function noop () {}
 
@@ -18,56 +18,60 @@ function HyperString (db, opts) {
 
   // Representation of the string's current state, as a DAG.
   // This makes traversal from the beginning of the document quick!
-  this.stringDag = {}
-  this.stringRoots = []
-  var self = this
-  this.index = hindex({
+  this.index = new SafeIndex({
     log: this.log,
-    db: memdb(),  // for now, separate in-memory
-    map: function (row, next) {
-      if (row.value.op === 'insert') {
-
-        // ensure 'prev' is known, if set
-        if (row.value.prev) {
-          var prev = self.stringDag[row.value.prev]
-          if (!prev) {
-            debug('ERR: entry references unknown "prev": "' + row.value.prev + '" -- skipping')
-            return next()
-          }
-        }
-
-        // add character
-        var character = {
-          chr: row.value.chr,
-          links: []
-        }
-        self.stringDag[row.key] = character
-        debug('stringDag['+row.key+'] = ' + character.chr)
-
-        // add links
-        if (row.value.prev) {
-          var prev = self.stringDag[row.value.prev]
-          if (!prev) throw new Error('this should NOT happen')
-          prev.links.unshift(row.key)
-        }
-
-        // set as a root if no hyperlog links
-        if (!row.value.prev) {
-          self.stringRoots.unshift(row.key)
-        }
-      } else if (row.value.op === 'delete') {
-        var entry = self.stringDag[row.value.at]
-        if (entry) {
-          entry.deleted = true
-        } else {
-          throw new Error('tried to delete non-existent ID: ' + row.value.at)
-        }
-      } else {
-        throw new Error('unsupported operation:', row.value.op)
+    db: memdb(),  // for now
+    init: function () {
+      return {
+        dag: {},
+        roots: []
       }
-      next()
-    }
+    },
+    map: indexMapFn
   })
+}
+
+function indexMapFn (index, row, next) {
+  if (row.value.op === 'insert') {
+    insertRow()
+    debug('INDEX stringDag[' + row.key + '] = ' + row.value.chr)
+  } else if (row.value.op === 'delete') {
+    deleteRow()
+  } else {
+    return next(new Error('unsupported operation:', row.value.op))
+  }
+
+  next()
+
+  function insertRow () {
+    // add links
+    if (row.value.prev) {
+      // ensure 'prev' is known, if set
+      var prev = index.dag[row.value.prev]
+      if (!prev) {
+        return next(new Error('ERR: entry references unknown "prev": "' + row.value.prev + '" -- skipping'))
+      }
+      prev.links.unshift(row.key)
+    } else {
+      // set as a root if no hyperlog links
+      index.roots.unshift(row.key)
+    }
+
+    // add character
+    index.dag[row.key] = {
+      chr: row.value.chr,
+      links: []
+    }
+  }
+
+  function deleteRow () {
+    var entry = index.dag[row.value.at]
+    if (entry) {
+      entry.deleted = true
+    } else {
+      return next(new Error('tried to delete non-existent ID: ' + row.value.at))
+    }
+  }
 }
 
 HyperString.prototype.insert = function (prev, string, done) {
@@ -91,20 +95,20 @@ HyperString.prototype.insert = function (prev, string, done) {
     if (!chars.length) return done(null, results)
 
     runInsert(chars.shift(), op ? op.pos : prev, insertNext)
-  }
 
-  function runInsert (chr, prev, cb) {
-    var op = {
-      op: 'insert',
-      chr: chr,
-      prev: prev || null
+    function runInsert (chr, prev, cb) {
+      var op = {
+        op: 'insert',
+        chr: chr,
+        prev: prev || null
+      }
+
+      self.log.append(op, function (err, node) {
+        if (err) return cb(err)
+        op.pos = node.key
+        cb(null, op)
+      })
     }
-
-    self.log.append(op, function (err, node) {
-      if (err) return cb(err)
-      op.pos = node.key
-      cb(null, op)
-    })
   }
 }
 
@@ -117,62 +121,72 @@ HyperString.prototype.delete = function (at, count, done) {
   assert.ok(count >= 0, 'count must be non-negative')
 
   var self = this
-  var removePositions = []
-  var results = []
 
   self.chars(function (err, chars) {
     if (err) return done(err)
 
-    var deleting = false
-    for (var i = 0; i < chars.length; i++) {
-      if (!count) break
+    var removePositions = getRemovePositions(chars, count)
 
+    doDelete(removePositions, done)
+  })
+
+  function getRemovePositions (chars, count) {
+    var removePositions = []
+    var deleting = false
+    for (var i = 0; i < chars.length && count > 0; i++) {
       if (chars[i].pos === at) {
         deleting = true
       }
       if (deleting) {
         removePositions.push(chars[i].pos)
-        count -= 1
+        count--
       }
     }
-
-    deleteNext()
-  })
-
-  function deleteNext (error, op) {
-    if (error) return done(error, results)
-    if (op) results.push(op)
-    if (!removePositions.length) return done(null, results)
-
-    runDelete(removePositions.shift(), deleteNext)
+    return removePositions
   }
 
-  function runDelete (at, cb) {
-    // TODO: support ranges
-    var op = {
-      op: 'delete',
-      at: at || null
+  function doDelete (removePositions, cb) {
+    var results = []
+    var n = 0
+
+    function deleteNext (err, op) {
+      n++
+      if (err) return cb(err, results)
+      if (op) results.push(op)
+      if (n === removePositions.length) return cb(null, results)
+      deleteCharAt(removePositions[n], deleteNext)
     }
-    self.log.append(op, function (err, node) {
-      if (err) return cb(err)
-      cb(null, op)
-    })
+
+    n = -1
+    deleteNext(null, null)
+
+    function deleteCharAt (at, cb) {
+      // TODO: support ranges
+      var op = {
+        op: 'delete',
+        at: at || null
+      }
+      self.log.append(op, function (err, node) {
+        if (err) return cb(err)
+        cb(null, op)
+      })
+    }
   }
 }
 
 HyperString.prototype.chars = function (cb) {
-  var string = []
+  this.index.ready(function (index) {
+    var string = indexToCharData(index)
+    if (cb) cb(null, string)
+  })
 
-  var self = this
-  this.index.ready(function () {
-    var queue = []
-    for (var i = 0; i < self.stringRoots.length; i++) {
-      queue.push(self.stringRoots[i])
-    }
+  function indexToCharData (index) {
+    var string = []
+    var queue = index.roots.slice()
 
     while (queue.length > 0) {
       var key = queue.shift()
-      var dagnode = self.stringDag[key]
+      var dagnode = index.dag[key]
       if (!dagnode.deleted) {
         var elem = {
           chr: dagnode.chr,
@@ -183,14 +197,19 @@ HyperString.prototype.chars = function (cb) {
       queue = dagnode.links.concat(queue)
     }
 
-    if (cb) cb(null, string)
-  })
+    return string
+  }
 }
 
+// The current state of the hyperstring, serialized to a plain string.
 HyperString.prototype.text = function (cb) {
-  this.chars(function (err, text) {
+  this.chars(function (err, chars) {
     if (err) return cb(err)
-    cb(null, text.map(function (c) { return c.chr }).join(''))
+
+    var text = chars.map(function (c) { return c.chr })
+    text = text.join('')
+
+    cb(null, text)
   })
 }
 
