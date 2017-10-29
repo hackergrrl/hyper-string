@@ -38,7 +38,8 @@ function indexMapFn (index, row, next) {
   } else if (row.value.op === 'delete') {
     deleteRow()
   } else {
-    return next(new Error('unsupported operation:', row.value.op))
+    // silently ignore other node types
+    // return next(new Error('unsupported operation:', row.value.op))
   }
 
   next()
