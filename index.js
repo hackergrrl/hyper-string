@@ -104,6 +104,13 @@ HyperString.prototype.insert = function (prev, string, done) {
         prev: prev || null
       }
 
+      // TODO(noffle): hack to prevent new strings /w no 'prev' from having the
+      // same hash. This would trigger a bug in hyperlog-index:
+      // https://github.com/substack/hyperlog-index/issues/8
+      if (!prev) {
+        op.nonce = Math.random().toString(16).substring(2)
+      }
+
       self.log.append(op, function (err, node) {
         if (err) return cb(err)
         op.pos = node.key

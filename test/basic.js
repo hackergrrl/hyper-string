@@ -180,3 +180,44 @@ test('delete: invalid input errors', function (t) {
     str.delete(null, -1)
   })
 })
+
+test('multiple heads', function (t) {
+  t.plan(7)
+
+  var str1 = hstring(memdb())
+  var str2 = hstring(memdb())
+
+  str1.insert(null, 'Hello', function (err) {
+    t.error(err)
+    str2.insert(null, 'Heya', function (err) {
+      t.error(err)
+      replicate(str1, str2, function (err) {
+        t.error(err)
+        str1.text(function (err, txt) {
+          t.error(err)
+          t.equal(txt, 'HeyaHello')
+          str2.text(function (err, txt) {
+            t.error(err)
+            t.equal(txt, 'HeyaHello')
+          })
+        })
+      })
+    })
+  })
+})
+
+function replicate (a, b, cb) {
+  var r1 = a.log.replicate()
+  var r2 = b.log.replicate()
+
+  r1.once('end', done)
+  r2.once('end', done)
+
+  r1.pipe(r2).pipe(r1)
+
+  var pending = 2
+  function done (err) {
+    if (err) throw err
+    if (!--pending) cb()
+  }
+}
