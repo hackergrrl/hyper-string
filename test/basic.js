@@ -33,7 +33,9 @@ test('insertions', function (t) {
   })
 })
 
-test('text + chars', function (t) {
+// TODO(noffle): skipped for now, since the 'nonce' on root insertions means
+// unpredictable hashes. :(
+test.skip('text + chars', function (t) {
   t.plan(4)
 
   var str = hstring(memdb())
@@ -120,10 +122,10 @@ test('insert with same prev twice', function (t) {
   var str = hstring(memdb())
 
   str.insert(null, 'H', function (err, ops1) {
-    str.insert(ops1[0].pos, 'y', function (err, ops2) {
-      str.insert(ops1[0].pos, 'e', function (err, ops3) {
+    str.insert(ops1[0].pos, 'e', function (err, ops2) {
+      str.insert(ops1[0].pos, 'y', function (err, ops3) {
         str.text(function (err, text) {
-          t.equal(text, 'Hey')
+          t.ok(text === 'Hey' || text === 'Hye')
         })
       })
     })
@@ -182,7 +184,7 @@ test('delete: invalid input errors', function (t) {
 })
 
 test('multiple heads', function (t) {
-  t.plan(7)
+  t.plan(6)
 
   var str1 = hstring(memdb())
   var str2 = hstring(memdb())
@@ -193,12 +195,11 @@ test('multiple heads', function (t) {
       t.error(err)
       replicate(str1, str2, function (err) {
         t.error(err)
-        str1.text(function (err, txt) {
+        str1.text(function (err, txt1) {
           t.error(err)
-          t.equal(txt, 'HeyaHello')
-          str2.text(function (err, txt) {
+          str2.text(function (err, txt2) {
             t.error(err)
-            t.equal(txt, 'HeyaHello')
+            t.equal(txt1, txt2)
           })
         })
       })
