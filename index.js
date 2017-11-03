@@ -53,7 +53,6 @@ function indexMapFn (index, row, next) {
         return next(new Error('ERR: entry references unknown "prev": "' + row.value.prev + '" -- skipping'))
       }
       prev.links.unshift(row.key)
-      prev.links.sort()
     } else {
       // set as a root if no hyperlog links
       index.roots.unshift(row.key)
