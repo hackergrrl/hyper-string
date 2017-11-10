@@ -33,6 +33,21 @@ test('insertions', function (t) {
   })
 })
 
+test('insert with same prev twice', function (t) {
+  t.plan(1)
+  var str = hstring(memdb())
+
+  str.insert(null, null, 'Hello', function (err, ops) {
+    str.insert(ops[0], ops[1], 'ey', function (err, _) {
+      str.insert(ops[0], ops[1], 'ola', function (err, _) {
+        str.text(function (err, text) {
+          t.equal(text, 'Holaeyello')
+        })
+      })
+    })
+  })
+})
+
 /*
 test('deletions', function (t) {
   t.plan(3)
@@ -60,21 +75,6 @@ test('deletions', function (t) {
   })
 })
 */
-
-test('insert with same prev twice', function (t) {
-  t.plan(1)
-  var str = hstring(memdb())
-
-  str.insert(null, null, 'Hello', function (err, ops) {
-    str.insert(ops[0], ops[1], 'ey', function (err, _) {
-      str.insert(ops[0], ops[1], 'ola', function (err, _) {
-        str.text(function (err, text) {
-          t.equal(text, 'Holaeyello')
-        })
-      })
-    })
-  })
-})
 
 /*
 test('insert/delete multiple chars', function (t) {
