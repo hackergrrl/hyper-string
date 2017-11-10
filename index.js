@@ -23,7 +23,7 @@ function HyperString (db, opts) {
     db: memdb(),  // for now
     init: function () {
       return {
-        dag: {},
+        nodes: {},
         roots: []
       }
     },
@@ -42,145 +42,135 @@ function indexMapFn (index, row, next) {
     // return next(new Error('unsupported operation:', row.value.op))
   }
 
+  function link (fromKey, toKey) {
+    var from = index.nodes[fromKey]
+    var to = index.nodes[toKey]
+
+    if (!from || !to) return
+
+    from.outgoingLinks.push(toKey)
+    to.incomingLinks.push(fromKey)
+  }
+
   next()
 
   function insertRow () {
-    // add links
-    if (row.value.prev) {
-      // ensure 'prev' is known, if set
-      var prev = index.dag[row.value.prev]
-      if (!prev) {
-        return next(new Error('ERR: entry references unknown "prev": "' + row.value.prev + '" -- skipping'))
+    var chars = []
+
+    // create individual character entries & link them into the dag
+    for (var i = 0; i < row.value.txt.length; i++) {
+      var key = row.key + '@' + i
+      index.nodes[key] = {
+        chr: row.value.txt[i],
+        outgoingLinks: [],
+        incomingLinks: []
       }
-      prev.links.unshift(row.key)
-    } else {
-      // set as a root if no hyperlog links
-      index.roots.unshift(row.key)
-      index.roots.sort()
+      chars.push(key)
+
+      // link 1st character and 'prev'
+      if (i === 0) {
+        link(row.value.prev, key)
+      }
+
+      // link this character to the previous one
+      if (i > 0) {
+        link(chars[i - 1], key)
+      }
+
+      // link last character to 'next'
+      if (i === row.value.txt.length - 1 && row.value.next) {
+        link(key, row.value.next)
+      }
     }
 
-    // add character
-    index.dag[row.key] = {
-      chr: row.value.chr,
-      links: []
+    // If not prev, make it a root
+    if (!row.value.prev) {
+      index.roots.push(chars[0])
+      index.roots.sort()
     }
   }
 
+  // mark all affected characters as deleted
   function deleteRow () {
-    var entry = index.dag[row.value.at]
-    if (entry) {
-      entry.deleted = true
-    } else {
-      return next(new Error('tried to delete non-existent ID: ' + row.value.at))
+    var visited = {}
+    var stack = [row.value.from]
+    console.log('roots', stack)
+
+    while (stack.length > 0) {
+      var key = stack.pop()
+      console.log('visit', key)
+
+      if (visited[key]) {
+        console.log('already visited; skip')
+        continue
+      }
+
+      var dagnode = index.nodes[key]
+
+      // bail if there are other nodes to visit before this one
+      var needToBail = false
+      for (var i = 0; i < dagnode.incomingLinks.length; i++) {
+        if (!visited[dagnode.incomingLinks[i]] && key !== row.value.from) {
+          console.log('gotta bail')
+          needToBail = true
+        }
+      }
+      if (needToBail) continue
+      console.log('no need to bail')
+
+      console.log('marked as deleted:', key)
+      index.nodes[key].deleted = true
+      visited[key] = true
+
+      if (key === row.value.to) {
+        console.log('reached end; stopping deletions')
+        break
+      }
+
+      stack.push.apply(stack, dagnode.outgoingLinks)
     }
   }
 }
 
-HyperString.prototype.insert = function (prev, string, done) {
+HyperString.prototype.insert = function (prev, next, string, done) {
   done = done || noop
 
   assert.equal(typeof done, 'function', 'function done required')
   assert.equal(typeof string, 'string', 'insertion string required')
 
-  var self = this
-  var results = []
-  var chars = string.split('')
-
-  // TODO: use hyperlog#batch
-  // https://github.com/mafintosh/hyperlog#logbatchdocs-opts-cb
-
-  insertNext()
-
-  function insertNext (error, op) {
-    if (error) return done(error, results)
-    if (op) results.push(op)
-    if (!chars.length) return done(null, results)
-
-    runInsert(chars.shift(), op ? op.pos : prev, insertNext)
-
-    function runInsert (chr, prev, cb) {
-      var op = {
-        op: 'insert',
-        chr: chr,
-        prev: prev || null
-      }
-
-      // TODO(noffle): hack to prevent new strings /w no 'prev' from having the
-      // same hash. This would trigger a bug in hyperlog-index:
-      // https://github.com/substack/hyperlog-index/issues/8
-      if (!prev) {
-        op.nonce = Math.random().toString(16).substring(2)
-      }
-
-      self.log.append(op, function (err, node) {
-        if (err) return cb(err)
-        op.pos = node.key
-        cb(null, op)
-      })
-    }
+  // TODO: check that prev and next are valid
+  var op = {
+    op: 'insert',
+    txt: string,
+    prev: prev,
+    next: next
   }
+
+  this.log.append(op, function (err, node) {
+    var chars = string.split('').map(function (chr, i) {
+      return node.key + '@' + i
+    })
+    done(err, chars)
+  })
 }
 
-HyperString.prototype.delete = function (at, count, done) {
+HyperString.prototype.delete = function (from, to, done) {
   done = done || noop
 
   assert.equal(typeof done, 'function', 'function done required')
-  assert.equal(typeof at, 'string', 'string at required')
-  assert.equal(typeof count, 'number', 'number count required')
-  assert.ok(count >= 0, 'count must be non-negative')
+  assert.equal(typeof from, 'string', 'string from required')
+  assert.equal(typeof to, 'string', 'string to required')
 
-  var self = this
+  // TODO: check that from and to are valid
+  var op = {
+    op: 'delete',
+    from: from,
+    to: to
+  }
 
-  self.chars(function (err, chars) {
-    if (err) return done(err)
-
-    var removePositions = getRemovePositions(chars, count)
-
-    doDelete(removePositions, done)
+  this.log.append(op, function (err, node) {
+    done(err)
   })
-
-  function getRemovePositions (chars, count) {
-    var removePositions = []
-    var deleting = false
-    for (var i = 0; i < chars.length && count > 0; i++) {
-      if (chars[i].pos === at) {
-        deleting = true
-      }
-      if (deleting) {
-        removePositions.push(chars[i].pos)
-        count--
-      }
-    }
-    return removePositions
-  }
-
-  function doDelete (removePositions, cb) {
-    var results = []
-    var n = 0
-
-    function deleteNext (err, op) {
-      n++
-      if (err) return cb(err, results)
-      if (op) results.push(op)
-      if (n === removePositions.length) return cb(null, results)
-      deleteCharAt(removePositions[n], deleteNext)
-    }
-
-    n = -1
-    deleteNext(null, null)
-
-    function deleteCharAt (at, cb) {
-      // TODO: support ranges
-      var op = {
-        op: 'delete',
-        at: at || null
-      }
-      self.log.append(op, function (err, node) {
-        if (err) return cb(err)
-        cb(null, op)
-      })
-    }
-  }
 }
 
 HyperString.prototype.chars = function (cb) {
@@ -191,11 +181,32 @@ HyperString.prototype.chars = function (cb) {
 
   function indexToCharData (index) {
     var string = []
-    var queue = index.roots.slice()
+    var visited = {}
+    var stack = index.roots.slice()
+    console.log('roots', stack)
 
-    while (queue.length > 0) {
-      var key = queue.shift()
-      var dagnode = index.dag[key]
+    while (stack.length > 0) {
+      var key = stack.pop()
+      console.log('visit', key)
+
+      if (visited[key]) {
+        console.log('already visited; skip')
+        continue
+      }
+
+      var dagnode = index.nodes[key]
+
+      // bail if there are other nodes to visit before this one
+      var needToBail = false
+      for (var i = 0; i < dagnode.incomingLinks.length; i++) {
+        if (!visited[dagnode.incomingLinks[i]]) {
+          console.log('gotta bail')
+          needToBail = true
+        }
+      }
+      if (needToBail) continue
+      console.log('no need to bail')
+
       if (!dagnode.deleted) {
         var elem = {
           chr: dagnode.chr,
@@ -203,7 +214,8 @@ HyperString.prototype.chars = function (cb) {
         }
         string.push(elem)
       }
-      queue = dagnode.links.concat(queue)
+      visited[key] = true
+      stack.push.apply(stack, dagnode.outgoingLinks)
     }
 
     return string
