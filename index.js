@@ -109,7 +109,7 @@ function indexMapFn (index, row, next) {
 
       // bail if there are other nodes to visit before this one
       var needToBail = false
-      for (var i=0; i < dagnode.incomingLinks.length; i++) {
+      for (var i = 0; i < dagnode.incomingLinks.length; i++) {
         if (!visited[dagnode.incomingLinks[i]] && key !== row.value.from) {
           console.log('gotta bail')
           needToBail = true
@@ -198,7 +198,7 @@ HyperString.prototype.chars = function (cb) {
 
       // bail if there are other nodes to visit before this one
       var needToBail = false
-      for (var i=0; i < dagnode.incomingLinks.length; i++) {
+      for (var i = 0; i < dagnode.incomingLinks.length; i++) {
         if (!visited[dagnode.incomingLinks[i]]) {
           console.log('gotta bail')
           needToBail = true

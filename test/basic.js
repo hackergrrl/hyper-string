@@ -65,35 +65,6 @@ test('deletions', function (t) {
   })
 })
 
-/*
-test('insert/delete multiple chars', function (t) {
-  var str = hstring(memdb())
-
-  str.insert(null, 'Hey', function (err, ops) {
-    t.equal(ops.length, 3)
-
-    t.equal(ops[0].prev, null)
-    t.equal(ops[0].chr, 'H')
-    t.equal(ops[1].prev, ops[0].pos)
-    t.equal(ops[1].chr, 'e')
-    t.equal(ops[2].prev, ops[1].pos)
-    t.equal(ops[2].chr, 'y')
-
-    str.delete(ops[0].pos, 2, function (err, ops2) {
-      t.equal(ops2.length, 2)
-
-      t.equal(ops2[0].at, ops[0].pos)
-      t.equal(ops2[1].at, ops[1].pos)
-
-      str.text(function (err, text) {
-        t.equal(text, 'y')
-        t.end()
-      })
-    })
-  })
-})
-*/
-
 test('insert: invalid input errors', function (t) {
   t.plan(1)
   var str = hstring(memdb())
@@ -118,16 +89,15 @@ test('delete: invalid input errors', function (t) {
   })
 })
 
-/*
-test('multiple heads', function (t) {
+test('multiple roots', function (t) {
   t.plan(6)
 
   var str1 = hstring(memdb())
   var str2 = hstring(memdb())
 
-  str1.insert(null, 'Hello', function (err) {
+  str1.insert(null, null, 'Hello', function (err) {
     t.error(err)
-    str2.insert(null, 'Heya', function (err) {
+    str2.insert(null, null, 'Heya', function (err) {
       t.error(err)
       replicate(str1, str2, function (err) {
         t.error(err)
@@ -142,7 +112,6 @@ test('multiple heads', function (t) {
     })
   })
 })
-*/
 
 function replicate (a, b, cb) {
   var r1 = a.log.replicate()
