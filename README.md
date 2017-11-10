@@ -19,9 +19,10 @@ var memdb = require('memdb')
 
 var str = hstring(memdb())
 
-str.insert(null, 'Helo', function (err, ops) {
-  // ops is an array of four insert ops
-  str.insert(ops[2].pos, 'l')
+str.insert(null, null, 'Hola', function (err, ops) {
+  // ops is an array of four unique IDs
+  str.insert(null, ops[0], '¡')
+  str.insert(ops[ops.length-1], null, '!')
 })
 
 str.text(function (err, text) {
@@ -32,7 +33,7 @@ str.text(function (err, text) {
 This will output
 
 ```
-Hello
+¡Hola!
 ```
 
 ## API
