@@ -46,40 +46,30 @@ var hstring = require('hyper-string')
 Creates a new hyper-string, backed by the
 [LevelUP](https://github.com/Level/levelup) instance `db`.
 
-### str.insert(pos, string, [cb])
+### str.insert(beforePos, afterPos, string, [cb])
 
-Inserts all characters of `string` after position `pos`, where `pos` is the unique
-ID of another character previously inserted. If `pos` is `null`, the given string
-is inserted at the beginning of the hyper-string.
+Inserts all characters of `string` after position `beforePos` and before
+position `afterPos`, which are unique IDs of other characters previously
+inserted. If 'beforePos` is `null`, the given string is inserted at the
+beginning of the hyper-string. If `afterPos` is `null`, it is inserted at the
+end.
 
 Remember, since the hyper-string is represented by a directed acyclic graph, it
-can have many different "beginnings".
+can have many different "beginnings" and "ends". hyper-string ensures that the
+ordering of these are deterministic.
 
-The callback `cb` is called with the signature `function (err, ops)`, where `ops`
-is an array of INSERTION operation objects of the form:
+The callback `cb` is called with the signature `function (err)`.
 
-```js
-{
-  op: 'insert',
-  chr: 'H',
-  pos: '...'
-  prev: '...' || null
-}
-```
+### str.delete(from, to, [cb])
 
-where `pos` is the unique ID representing this inserted character's location,
-`chr` is the inserted character, and `prev` is either the preceding character's
-ID, or `null` (this character is a document root).
-
-### str.delete(pos, count, [cb])
-
-Deletes `count` characters, starting at position `pos`. `cb` is called with the signature
-`function (err, ops)`, where `ops` is an array of DELETE operation objects of the form:
+Deletes the characters between positions `from` and `to`, inclusive. `cb` is
+called with the signature `function (err)`.
 
 ```js
 {
   op: 'delete',
-  pos: ...
+  from: ...,
+  to: ...
 }
 ```
 
