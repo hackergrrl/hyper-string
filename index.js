@@ -85,7 +85,8 @@ function indexMapFn (index, row, next) {
 
     // If not prev, make it a root
     if (!row.value.prev) {
-      index.roots[chars[0]] = chars[0]
+      index.roots.push(chars[0])
+      index.roots.sort()
     }
   }
 
@@ -143,19 +144,39 @@ HyperString.prototype.chars = function (cb) {
 
   function indexToCharData (index) {
     var string = []
-    var queue = index.roots.slice()
+    var visited = {}
+    var stack = index.roots.slice()
+    console.log('roots', stack)
 
-    while (queue.length > 0) {
-      var key = queue.shift()
-      var dagnode = index.dag[key]
-      if (!dagnode.deleted) {
-        var elem = {
-          chr: dagnode.chr,
-          pos: key
-        }
-        string.push(elem)
+    while (stack.length > 0) {
+      var key = stack.pop()
+      console.log('visit', key)
+
+      if (visited[key]) {
+        console.log('already visited; skip')
+        continue
       }
-      queue = dagnode.links.concat(queue)
+
+      var dagnode = index.nodes[key]
+
+      // bail if there are other nodes to visit before this one
+      var needToBail = false
+      for (var i=0; i < dagnode.incomingLinks.length; i++) {
+        if (!visited[dagnode.incomingLinks[i]]) {
+          console.log('gotta bail')
+          needToBail = true
+        }
+      }
+      if (needToBail) continue
+      console.log('no need to bail')
+
+      var elem = {
+        chr: dagnode.chr,
+        pos: key
+      }
+      string.push(elem)
+      visited[key] = true
+      stack.push.apply(stack, dagnode.outgoingLinks)
     }
 
     return string
