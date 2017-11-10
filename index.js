@@ -46,6 +46,8 @@ function indexMapFn (index, row, next) {
     var from = index.nodes[fromKey]
     var to = index.nodes[toKey]
 
+    if (!from || !to) return
+
     from.outgoingLinks.push(toKey)
     to.incomingLinks.push(fromKey)
   }
@@ -107,7 +109,10 @@ HyperString.prototype.insert = function (prev, next, string, done) {
   }
 
   this.log.append(op, function (err, node) {
-    done(err)
+    var chars = string.split('').map(function (chr, i) {
+      return node.key + '@' + i
+    })
+    done(err, chars)
   })
 }
 

@@ -10,28 +10,30 @@ test('insertions', function (t) {
 
   var str = hstring(memdb())
 
-  str.insert(null, 'H', function (err, ops) {
+  str.insert(null, null, 'H', function (err, chars) {
     t.notOk(err)
-    t.equal(ops[0].chr, 'H')
-    str.insert(ops[0].pos, 'e', function (err, ops2) {
+    t.deepEqual(chars, ['afbbcabffe1f75c9d010286669e75ec7149e47471462c69ca1f2bb56a9117524@0'])
+    str.insert(chars[0], null, 'e', function (err, chars2) {
       t.notOk(err)
-      t.equal(ops2[0].chr, 'e')
-      str.insert(ops2[0].pos, 'y', function (err, ops3) {
+      t.deepEqual(chars2, ['4723f92bbe631f53f5cdf4bb49cb226cb4f6bdda12a15d694c1201e76458b483@0'])
+      str.insert(chars2[0], null, 'y', function (err, chars3) {
         t.notOk(err)
-        t.equal(ops3[0].chr, 'y')
+        t.deepEqual(chars3, ['0a81237d1d6a4baf4832ec9375d67a554725fb8fad6427503ff26518d2082104@0'])
 
         str.createReadStream().pipe(concat(function (ops) {
           t.equal(ops.length, 3)
-          t.equal(ops[0].value.chr, 'H')
-          t.equal(ops[1].value.chr, 'e')
-          t.equal(ops[1].value.prev, ops[0].key)
-          t.equal(ops[2].value.chr, 'y')
-          t.equal(ops[2].value.prev, ops[1].key)
+          t.equal(ops[0].value.txt, 'H')
+          t.equal(ops[1].value.txt, 'e')
+          t.equal(ops[1].value.prev, ops[0].key + '@0')
+          t.equal(ops[2].value.txt, 'y')
+          t.equal(ops[2].value.prev, ops[1].key + '@0')
         }))
       })
     })
   })
 })
+
+return
 
 // TODO(noffle): skipped for now, since the 'nonce' on root insertions means
 // unpredictable hashes. :(
