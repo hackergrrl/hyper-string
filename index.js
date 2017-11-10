@@ -94,14 +94,11 @@ function indexMapFn (index, row, next) {
   function deleteRow () {
     var visited = {}
     var stack = [row.value.from]
-    console.log('roots', stack)
 
     while (stack.length > 0) {
       var key = stack.pop()
-      console.log('visit', key)
 
       if (visited[key]) {
-        console.log('already visited; skip')
         continue
       }
 
@@ -111,19 +108,15 @@ function indexMapFn (index, row, next) {
       var needToBail = false
       for (var i = 0; i < dagnode.incomingLinks.length; i++) {
         if (!visited[dagnode.incomingLinks[i]] && key !== row.value.from) {
-          console.log('gotta bail')
           needToBail = true
         }
       }
       if (needToBail) continue
-      console.log('no need to bail')
 
-      console.log('marked as deleted:', key)
       index.nodes[key].deleted = true
       visited[key] = true
 
       if (key === row.value.to) {
-        console.log('reached end; stopping deletions')
         break
       }
 
@@ -183,14 +176,11 @@ HyperString.prototype.chars = function (cb) {
     var string = []
     var visited = {}
     var stack = index.roots.slice()
-    console.log('roots', stack)
 
     while (stack.length > 0) {
       var key = stack.pop()
-      console.log('visit', key)
 
       if (visited[key]) {
-        console.log('already visited; skip')
         continue
       }
 
@@ -200,12 +190,10 @@ HyperString.prototype.chars = function (cb) {
       var needToBail = false
       for (var i = 0; i < dagnode.incomingLinks.length; i++) {
         if (!visited[dagnode.incomingLinks[i]]) {
-          console.log('gotta bail')
           needToBail = true
         }
       }
       if (needToBail) continue
-      console.log('no need to bail')
 
       if (!dagnode.deleted) {
         var elem = {
