@@ -102,7 +102,9 @@ $ npm install hyper-string
 
 ## Acknowledgments
 
-**TODO**: mention a bunch of the papers and other projects
+Based on the [Logroot CRDT
+paper](https://hal.archives-ouvertes.fr/file/index/docid/345911/filename/main.pdf)
+by Stephane Weiss, Pascal Urso, and Pascal Molli.
 
 ## License
 
