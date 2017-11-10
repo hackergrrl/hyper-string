@@ -1,7 +1,7 @@
 {
   "name": "hyper-string",
   "description": "conflict-free p2p string data structure powered by a hyperlog of operations",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "author": "Stephen Whitmore <stephen.whitmore@gmail.com>",
   "repository": {
     "url": "git://github.com/noffle/hyper-string.git"
