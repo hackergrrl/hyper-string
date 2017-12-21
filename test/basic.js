@@ -12,13 +12,13 @@ test('insertions', function (t) {
 
   str.insert(null, null, 'H', function (err, chars) {
     t.notOk(err)
-    t.deepEqual(chars, ['afbbcabffe1f75c9d010286669e75ec7149e47471462c69ca1f2bb56a9117524@0'])
-    str.insert(chars[0], null, 'e', function (err, chars2) {
+    t.deepEqual(chars, [{chr: 'H', pos: 'afbbcabffe1f75c9d010286669e75ec7149e47471462c69ca1f2bb56a9117524@0'}])
+    str.insert(chars[0].pos, null, 'e', function (err, chars2) {
       t.notOk(err)
-      t.deepEqual(chars2, ['4723f92bbe631f53f5cdf4bb49cb226cb4f6bdda12a15d694c1201e76458b483@0'])
-      str.insert(chars2[0], null, 'y', function (err, chars3) {
+      t.deepEqual(chars2, [{chr: 'e', pos: '4723f92bbe631f53f5cdf4bb49cb226cb4f6bdda12a15d694c1201e76458b483@0'}])
+      str.insert(chars2[0].pos, null, 'y', function (err, chars3) {
         t.notOk(err)
-        t.deepEqual(chars3, ['0a81237d1d6a4baf4832ec9375d67a554725fb8fad6427503ff26518d2082104@0'])
+        t.deepEqual(chars3, [{chr: 'y', pos: '0a81237d1d6a4baf4832ec9375d67a554725fb8fad6427503ff26518d2082104@0'}])
 
         str.createReadStream().pipe(concat(function (ops) {
           t.equal(ops.length, 3)
@@ -38,8 +38,8 @@ test('insert with same prev twice', function (t) {
   var str = hstring(memdb())
 
   str.insert(null, null, 'Hello', function (err, ops) {
-    str.insert(ops[0], ops[1], 'ey', function (err, _) {
-      str.insert(ops[0], ops[1], 'ola', function (err, _) {
+    str.insert(ops[0].pos, ops[1].pos, 'ey', function (err, _) {
+      str.insert(ops[0].pos, ops[1].pos, 'ola', function (err, _) {
         str.text(function (err, text) {
           t.equal(text, 'Holaeyello')
         })
@@ -55,7 +55,7 @@ test('deletions', function (t) {
 
   str.insert(null, null, 'beep boop', function (err, ops) {
     t.error(err)
-    str.delete(ops[1], ops[7], function (err) {
+    str.delete(ops[1].pos, ops[7].pos, function (err) {
       t.error(err)
       str.text(function (err, text) {
         t.error(err)

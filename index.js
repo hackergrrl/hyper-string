@@ -141,7 +141,10 @@ HyperString.prototype.insert = function (prev, next, string, done) {
 
   this.log.append(op, function (err, node) {
     var chars = string.split('').map(function (chr, i) {
-      return node.key + '@' + i
+      return {
+        pos: node.key + '@' + i,
+        chr: string[i]
+      }
     })
     done(err, chars)
   })

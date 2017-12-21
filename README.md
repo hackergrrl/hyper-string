@@ -59,7 +59,16 @@ Remember, since the hyper-string is represented by a directed acyclic graph, it
 can have many different "beginnings" and "ends". hyper-string ensures that the
 ordering of these are deterministic.
 
-The callback `cb` is called with the signature `function (err)`.
+The callback `cb` is called with the signature `function (err, chars)`, where
+`chars` is an array of the inserted characters of the form
+
+```js
+{
+  chr: 'P',
+  pos: '...'
+}
+```
+
 
 ### str.delete(from, to, [cb])
 
@@ -69,8 +78,8 @@ called with the signature `function (err)`.
 ```js
 {
   op: 'delete',
-  from: ...,
-  to: ...
+  from: '...',
+  to: '...'
 }
 ```
 
