@@ -103,7 +103,7 @@ HyperString.prototype.text = function (cb) {
 HyperString.prototype.snapshot = function (cb) {
   var self = this
   this.index.ready(function () {
-    cb(null, Object.assign({}, self.data))
+    cb(null, self.data.clone())
   })
 }
 
