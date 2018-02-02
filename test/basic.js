@@ -113,6 +113,23 @@ test('multiple roots', function (t) {
   })
 })
 
+test('replacing a root', function (t) {
+  t.plan(4)
+
+  var str = hstring(memdb())
+
+  str.insert(null, null, 'Hey thar', function (err, chars) {
+    t.notOk(err)
+    str.insert(null, chars[0].pos, 'Greetings and ', function (err, chars2) {
+      t.notOk(err)
+      str.text(function (err, text) {
+        t.notOk(err)
+        t.equals(text, 'Greetings and Hey thar')
+      })
+    })
+  })
+})
+
 function replicate (a, b, cb) {
   var r1 = a.log.replicate()
   var r2 = b.log.replicate()

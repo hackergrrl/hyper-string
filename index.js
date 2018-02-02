@@ -83,8 +83,22 @@ function indexMapFn (index, row, next) {
       }
     }
 
-    // If not prev, make it a root
-    if (!row.value.prev) {
+    // If no prev, make it a root
+    // Case 1: no prev + no next => new root
+    if (!row.value.prev && !row.value.next) {
+      index.roots.push(chars[0])
+      index.roots.sort()
+    }
+    // Case 2: no prev + valid next => new root (replace old root)
+    else if (!row.value.prev) {
+      // Find + cull the old root
+      for (var i = 0; i < index.roots.length; i++) {
+        var root = index.roots[i]
+        if (row.value.next === root) {
+          index.roots.splice(i, 1)
+        }
+      }
+      // Add the new root
       index.roots.push(chars[0])
       index.roots.sort()
     }
