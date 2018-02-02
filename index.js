@@ -89,10 +89,11 @@ function indexMapFn (index, row, next) {
       index.roots.push(chars[0])
       index.roots.sort()
     }
+
     // Case 2: no prev + valid next => new root (replace old root)
-    else if (!row.value.prev) {
+    if (!row.value.prev && row.value.next) {
       // Find + cull the old root
-      for (var i = 0; i < index.roots.length; i++) {
+      for (i = 0; i < index.roots.length; i++) {
         var root = index.roots[i]
         if (row.value.next === root) {
           index.roots.splice(i, 1)
