@@ -100,6 +100,13 @@ HyperString.prototype.text = function (cb) {
   })
 }
 
+HyperString.prototype.snapshot = function (cb) {
+  var self = this
+  this.index.ready(function () {
+    cb(null, Object.assign({}, self.data))
+  })
+}
+
 HyperString.prototype.createReadStream = function (opts) {
   return this.log.createReadStream(opts)
 }
